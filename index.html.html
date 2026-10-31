@@ -1,0 +1,824 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>Cyber Runner 2099</title>
+  <style>
+    body, html {
+      margin: 0;
+      padding: 0;
+      overflow: hidden;
+      width: 100%;
+      height: 100%;
+      background: #050510;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      user-select: none;
+    }
+    #game-container {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+    }
+    #top-bar {
+      position: absolute;
+      top: 20px;
+      left: 20px;
+      right: 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      z-index: 15;
+      pointer-events: none;
+    }
+    #ui {
+      color: #00ffff;
+      font-size: 26px;
+      font-weight: 900;
+      letter-spacing: 2px;
+      text-shadow: 0 0 10px #00ffff, 0 0 20px #0088ff;
+    }
+    #user-badge {
+      color: #a0c4ff;
+      font-size: 13px;
+      letter-spacing: 1px;
+      margin-top: 4px;
+      text-shadow: 0 0 5px #00ffff;
+    }
+    #speed-alert {
+      display: none;
+      position: absolute;
+      top: 30%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      color: #ff0055;
+      font-size: 32px;
+      font-weight: 900;
+      letter-spacing: 3px;
+      text-shadow: 0 0 15px #ff0055, 0 0 30px #ffff00;
+      z-index: 25;
+      animation: flash 1s ease-in-out;
+      pointer-events: none;
+    }
+    @keyframes flash {
+      0% { opacity: 0; transform: translate(-50%, -50%) scale(0.7); }
+      50% { opacity: 1; transform: translate(-50%, -50%) scale(1.15); }
+      100% { opacity: 0; transform: translate(-50%, -50%) scale(1); }
+    }
+    #live-reset-btn {
+      pointer-events: auto;
+      padding: 10px 22px;
+      font-size: 14px;
+      font-weight: bold;
+      color: #ff0055;
+      background: rgba(8, 10, 24, 0.85);
+      border: 2px solid #ff0055;
+      border-radius: 8px;
+      cursor: pointer;
+      box-shadow: 0 0 12px rgba(255, 0, 85, 0.4);
+      letter-spacing: 1.5px;
+      transition: all 0.2s ease;
+    }
+    #live-reset-btn:hover {
+      background: #ff0055;
+      color: #ffffff;
+      box-shadow: 0 0 20px #ff0055;
+    }
+
+    /* Modal Styling for Login & Overlays */
+    .screen-modal {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: rgba(8, 10, 24, 0.96);
+      padding: 35px 45px;
+      border-radius: 16px;
+      text-align: center;
+      color: white;
+      z-index: 35;
+      border: 2px solid #00ffff;
+      box-shadow: 0 0 35px rgba(0, 255, 255, 0.5), inset 0 0 20px rgba(0, 255, 255, 0.15);
+      width: 85%;
+      max-width: 360px;
+      box-sizing: border-box;
+    }
+
+    .form-group {
+      margin: 15px 0;
+      text-align: left;
+    }
+    .form-group label {
+      display: block;
+      color: #00ffff;
+      font-size: 13px;
+      font-weight: bold;
+      margin-bottom: 6px;
+      letter-spacing: 1px;
+    }
+    .form-group input {
+      width: 100%;
+      padding: 12px;
+      background: #111625;
+      border: 1.5px solid #1f3d60;
+      border-radius: 8px;
+      color: #ffffff;
+      font-size: 15px;
+      outline: none;
+      box-sizing: border-box;
+      transition: 0.2s;
+    }
+    .form-group input:focus {
+      border-color: #00ffff;
+      box-shadow: 0 0 10px rgba(0, 255, 255, 0.4);
+    }
+    #login-err {
+      display: none;
+      color: #ff0055;
+      font-size: 13px;
+      margin-top: 10px;
+      font-weight: bold;
+      text-shadow: 0 0 6px #ff0055;
+    }
+
+    .action-btn {
+      width: 100%;
+      margin-top: 15px;
+      padding: 14px 20px;
+      font-size: 18px;
+      font-weight: 900;
+      background: #00ffff;
+      color: #050510;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      box-shadow: 0 0 20px #00ffff;
+      letter-spacing: 2px;
+      transition: all 0.2s ease;
+    }
+    .action-btn:hover {
+      background: #ffffff;
+      box-shadow: 0 0 30px #ffffff;
+      transform: scale(1.03);
+    }
+
+    #game-over-screen {
+      display: none;
+      border-color: #ff0055;
+      box-shadow: 0 0 30px #ff0055aa, inset 0 0 15px rgba(255, 0, 85, 0.3);
+    }
+    #crash-name {
+      margin: 0;
+      color: #ff0055;
+      font-size: 26px;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      text-shadow: 0 0 15px #ff0055;
+      word-break: break-word;
+    }
+    #restart-btn {
+      background: #ff0055;
+      color: #ffffff;
+      box-shadow: 0 0 15px #ff0055;
+    }
+    #restart-btn:hover {
+      background: #ffffff;
+      color: #050510;
+      box-shadow: 0 0 25px #ffffff;
+    }
+
+    #controls-hint {
+      position: absolute;
+      bottom: 20px;
+      width: 100%;
+      text-align: center;
+      color: rgba(0, 255, 255, 0.7);
+      font-size: 14px;
+      letter-spacing: 1px;
+      z-index: 10;
+      text-shadow: 0 0 8px #00ffff;
+    }
+  </style>
+</head>
+<body>
+
+  <div id="top-bar">
+    <div>
+      <div id="ui">DIST: <span id="score-val">0</span>m</div>
+      <div id="user-badge"></div>
+    </div>
+    <button id="live-reset-btn" onclick="resetToInitialState()">RESET</button>
+  </div>
+
+  <div id="speed-alert">SPEED BOOST +</div>
+
+  <!-- 1. LOGIN SCREEN (Mobile + Gmail) -->
+  <div id="login-screen" class="screen-modal">
+    <h1 style="margin: 0; color: #00ffff; font-size: 26px; letter-spacing: 2px; text-shadow: 0 0 12px #00ffff;">PLAYER LOGIN</h1>
+    <p style="margin: 10px 0 18px 0; color: #a0c4ff; font-size: 13px;">Login required before starting the run</p>
+    
+    <div class="form-group">
+      <label>MOBILE NUMBER</label>
+      <input type="tel" id="user-mobile" placeholder="e.g. 9876543210" maxlength="10">
+    </div>
+
+    <div class="form-group">
+      <label>GMAIL ADDRESS</label>
+      <input type="email" id="user-email" placeholder="example@gmail.com">
+    </div>
+
+    <div id="login-err">Please enter valid Mobile & Gmail!</div>
+
+    <button class="action-btn" onclick="handleLogin()">SUBMIT & PLAY</button>
+  </div>
+
+  <!-- 2. GAME OVER SCREEN -->
+  <div id="game-over-screen" class="screen-modal">
+    <div style="color: #a0c4ff; font-size: 14px; letter-spacing: 2px; margin-bottom: 8px;">YOU HIT:</div>
+    <h2 id="crash-name">SYSTEM CRASH</h2>
+    <p style="margin: 18px 0; font-size: 18px; color: #a0c4ff;">WARP DISTANCE: <span id="final-score" style="color: #00ffff; font-weight: bold;">0</span>m</p>
+    <button id="restart-btn" class="action-btn" onclick="resetToInitialState()">RESET</button>
+  </div>
+
+  <div id="controls-hint">Arrow Keys / Swipe to Evade | Up or Space to Jump</div>
+  <div id="game-container"></div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+
+  <script>
+    const nameList = [
+      "asish singh",
+      "awdesh ram",
+      "suresh ram",
+      "rahul rajak",
+      "shyam sundar mandal",
+      "rima mandal",
+      "suman ki ma ki"
+    ];
+    let nameIndex = 0;
+
+    let scene, camera, renderer;
+    let player;
+    let playerLimbs = {};
+    let lanes = [-2.6, 0, 2.6];
+    let currentLane = 1;
+    let targetX = 0;
+    
+    let isJumping = false;
+    let jumpVelocity = 0;
+    const gravity = -0.016;
+
+    let tracks = [];
+    let obstacles = [];
+    let sideElements = [];
+    let glowingBands = [];
+    
+    const trackSegmentLength = 25;
+    const totalSegments = 10;
+    
+    const initialSpeed = 0.65;
+    let gameSpeed = initialSpeed;
+    let score = 0;
+    let lastSpeedTier = 0;
+    let isGameRunning = false;
+    let isGameOver = false;
+
+    let loggedInUser = null;
+
+    let touchStartX = 0;
+    let touchStartY = 0;
+
+    // Login Validation Function
+    function handleLogin() {
+      const mobileInput = document.getElementById('user-mobile').value.trim();
+      const emailInput = document.getElementById('user-email').value.trim();
+      const errBox = document.getElementById('login-err');
+
+      const mobileRegex = /^[0-9]{10}$/;
+      const emailRegex = /^[a-zA-Z0-9._%+-]+@gmail\.com$/i;
+
+      if (!mobileRegex.test(mobileInput) || !emailRegex.test(emailInput)) {
+        errBox.style.display = 'block';
+        return;
+      }
+
+      errBox.style.display = 'none';
+      loggedInUser = { mobile: mobileInput, email: emailInput };
+
+      // Update Top Badge
+      document.getElementById('user-badge').innerText = `ID: ${mobileInput}`;
+
+      // Hide login and trigger start run
+      document.getElementById('login-screen').style.display = 'none';
+      isGameRunning = true;
+      isGameOver = false;
+    }
+
+    function createForeheadBadgeTexture(text) {
+      const canvas = document.createElement('canvas');
+      canvas.width = 512;
+      canvas.height = 140;
+      const ctx = canvas.getContext('2d');
+
+      ctx.fillStyle = '#0a0d18';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      ctx.lineWidth = 10;
+      ctx.strokeStyle = '#ff0055';
+      ctx.strokeRect(5, 5, canvas.width - 10, canvas.height - 10);
+
+      ctx.fillStyle = '#ffff00';
+      ctx.shadowColor = '#ff0055';
+      ctx.shadowBlur = 10;
+      ctx.font = 'bold 36px "Segoe UI", Arial, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(text.toUpperCase(), canvas.width / 2, canvas.height / 2);
+
+      return new THREE.CanvasTexture(canvas);
+    }
+
+    function createPlayerBadgeTexture(text) {
+      const canvas = document.createElement('canvas');
+      canvas.width = 512;
+      canvas.height = 128;
+      const ctx = canvas.getContext('2d');
+
+      ctx.fillStyle = 'rgba(10, 25, 45, 0.9)';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      ctx.lineWidth = 8;
+      ctx.strokeStyle = '#00ffff';
+      ctx.strokeRect(4, 4, canvas.width - 8, canvas.height - 8);
+
+      ctx.fillStyle = '#00ffff';
+      ctx.shadowColor = '#00ffff';
+      ctx.shadowBlur = 14;
+      ctx.font = 'bold 44px "Segoe UI", Arial, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(text.toUpperCase(), canvas.width / 2, canvas.height / 2);
+
+      return new THREE.CanvasTexture(canvas);
+    }
+
+    init();
+    animate();
+
+    function init() {
+      const container = document.getElementById('game-container');
+      
+      scene = new THREE.Scene();
+      scene.background = new THREE.Color(0x060814);
+      scene.fog = new THREE.Fog(0x060814, 25, 140);
+
+      camera = new THREE.PerspectiveCamera(65, window.innerWidth / window.innerHeight, 0.1, 250);
+      camera.position.set(0, 4.5, 7.8);
+      camera.rotation.x = -0.28;
+
+      renderer = new THREE.WebGLRenderer({ antialias: true });
+      renderer.setSize(window.innerWidth, window.innerHeight);
+      renderer.shadowMap.enabled = true;
+      container.appendChild(renderer.domElement);
+
+      const ambientLight = new THREE.AmbientLight(0x334466, 1.3);
+      scene.add(ambientLight);
+
+      const neonLight = new THREE.DirectionalLight(0x00ffff, 1.2);
+      neonLight.position.set(15, 30, 20);
+      scene.add(neonLight);
+
+      // Human Runner Raja Mandal
+      const playerGroup = new THREE.Group();
+
+      const skinMat = new THREE.MeshStandardMaterial({ color: 0xdfa06a, roughness: 0.5 });
+      const jacketMat = new THREE.MeshStandardMaterial({ color: 0x00a8ff, roughness: 0.4 });
+      const pantsMat = new THREE.MeshStandardMaterial({ color: 0x192a56, roughness: 0.6 });
+
+      const torso = new THREE.Mesh(new THREE.BoxGeometry(0.75, 0.95, 0.45), jacketMat);
+      torso.position.y = 1.35;
+      playerGroup.add(torso);
+
+      const head = new THREE.Mesh(new THREE.BoxGeometry(0.48, 0.48, 0.45), skinMat);
+      head.position.y = 2.12;
+      playerGroup.add(head);
+
+      const hairMat = new THREE.MeshStandardMaterial({ color: 0x0a0a0a });
+      const hair = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.18, 0.48), hairMat);
+      hair.position.y = 2.4;
+      playerGroup.add(hair);
+
+      const badgeTex = createPlayerBadgeTexture("RAJA MANDAL");
+      const badgeMat = new THREE.MeshBasicMaterial({ map: badgeTex, transparent: true });
+      const badge = new THREE.Mesh(new THREE.PlaneGeometry(2.3, 0.6), badgeMat);
+      badge.position.set(0, 2.75, 0.1);
+      playerGroup.add(badge);
+
+      const armLPivot = new THREE.Group();
+      armLPivot.position.set(-0.52, 1.75, 0);
+      const armL = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.85, 0.2), jacketMat);
+      armL.position.y = -0.42;
+      armLPivot.add(armL);
+      playerGroup.add(armLPivot);
+
+      const armRPivot = new THREE.Group();
+      armRPivot.position.set(0.52, 1.75, 0);
+      const armR = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.85, 0.2), jacketMat);
+      armR.position.y = -0.42;
+      armRPivot.add(armR);
+      playerGroup.add(armRPivot);
+
+      const legLPivot = new THREE.Group();
+      legLPivot.position.set(-0.22, 0.88, 0);
+      const legL = new THREE.Mesh(new THREE.BoxGeometry(0.26, 0.88, 0.26), pantsMat);
+      legL.position.y = -0.44;
+      legLPivot.add(legL);
+      playerGroup.add(legLPivot);
+
+      const legRPivot = new THREE.Group();
+      legRPivot.position.set(0.22, 0.88, 0);
+      const legR = new THREE.Mesh(new THREE.BoxGeometry(0.26, 0.88, 0.26), pantsMat);
+      legR.position.y = -0.44;
+      legRPivot.add(legR);
+      playerGroup.add(legRPivot);
+
+      playerLimbs = {
+        armL: armLPivot,
+        armR: armRPivot,
+        legL: legLPivot,
+        legR: legRPivot
+      };
+
+      player = playerGroup;
+      scene.add(player);
+
+      for (let i = 0; i < totalSegments; i++) {
+        createTrackSegment(-i * trackSegmentLength);
+      }
+
+      window.addEventListener('resize', onWindowResize);
+      window.addEventListener('keydown', handleKeyDown);
+
+      window.addEventListener('touchstart', (e) => {
+        touchStartX = e.touches[0].clientX;
+        touchStartY = e.touches[0].clientY;
+      });
+
+      window.addEventListener('touchend', (e) => {
+        if (!isGameRunning || isGameOver) return;
+        let diffX = e.changedTouches[0].clientX - touchStartX;
+        let diffY = e.changedTouches[0].clientY - touchStartY;
+
+        if (Math.abs(diffX) > Math.abs(diffY)) {
+          if (diffX > 30) moveRight();
+          else if (diffX < -30) moveLeft();
+        } else {
+          if (diffY < -30) jump();
+        }
+      });
+    }
+
+    function createSidePylon(x, z) {
+      const pylon = new THREE.Group();
+      
+      const pillarMat = new THREE.MeshStandardMaterial({ color: 0x111625, metalness: 0.9, roughness: 0.2 });
+      const pillar = new THREE.Mesh(new THREE.BoxGeometry(0.8, 8, 0.8), pillarMat);
+      pillar.position.y = 4;
+      pylon.add(pillar);
+
+      const neonMat1 = new THREE.MeshBasicMaterial({ color: 0x00ffff });
+      const band1 = new THREE.Mesh(new THREE.BoxGeometry(1.05, 0.5, 1.05), neonMat1);
+      band1.position.y = 6.8;
+      pylon.add(band1);
+
+      const neonMat2 = new THREE.MeshBasicMaterial({ color: 0xff00ff });
+      const band2 = new THREE.Mesh(new THREE.BoxGeometry(0.95, 0.4, 0.95), neonMat2);
+      band2.position.y = 4.5;
+      pylon.add(band2);
+
+      const neonMat3 = new THREE.MeshBasicMaterial({ color: 0x00ff88 });
+      const band3 = new THREE.Mesh(new THREE.BoxGeometry(0.95, 0.4, 0.95), neonMat3);
+      band3.position.y = 2.2;
+      pylon.add(band3);
+
+      const sphereMat = new THREE.MeshBasicMaterial({ color: 0xffff00 });
+      const beacon = new THREE.Mesh(new THREE.SphereGeometry(0.4, 12, 12), sphereMat);
+      beacon.position.y = 8.2;
+      pylon.add(beacon);
+
+      glowingBands.push({
+        band1: neonMat1,
+        band2: neonMat2,
+        band3: neonMat3,
+        beacon: sphereMat,
+        offset: Math.random() * 50
+      });
+
+      pylon.position.set(x, 0, z);
+      scene.add(pylon);
+      sideElements.push(pylon);
+    }
+
+    function createTrackSegment(zPosition) {
+      const trackGroup = new THREE.Group();
+
+      const baseGeo = new THREE.BoxGeometry(8.2, 0.4, trackSegmentLength);
+      const baseMat = new THREE.MeshStandardMaterial({ color: 0x0c101d, metalness: 0.8, roughness: 0.4 });
+      const base = new THREE.Mesh(baseGeo, baseMat);
+      base.position.set(0, -0.2, 0);
+      trackGroup.add(base);
+
+      const railGeo = new THREE.BoxGeometry(0.18, 0.35, trackSegmentLength);
+      const railMatL = new THREE.MeshBasicMaterial({ color: 0x00ffff });
+      const railMatR = new THREE.MeshBasicMaterial({ color: 0xff0077 });
+      
+      const railL = new THREE.Mesh(railGeo, railMatL);
+      railL.position.set(-4.0, 0.12, 0);
+      trackGroup.add(railL);
+
+      const railR = new THREE.Mesh(railGeo, railMatR);
+      railR.position.set(4.0, 0.12, 0);
+      trackGroup.add(railR);
+
+      const lineMat = new THREE.MeshBasicMaterial({ color: 0x1f3d60 });
+      for (let laneX of [-1.3, 1.3]) {
+        const laneLine = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.05, trackSegmentLength), lineMat);
+        laneLine.position.set(laneX, 0.02, 0);
+        trackGroup.add(laneLine);
+      }
+
+      trackGroup.position.set(0, 0, zPosition);
+      scene.add(trackGroup);
+      tracks.push(trackGroup);
+
+      for (let i = 0; i < 2; i++) {
+        let pylonZ = zPosition + (i * 12) - 6;
+        createSidePylon(-6.5 - Math.random() * 2, pylonZ);
+        createSidePylon(6.5 + Math.random() * 2, pylonZ);
+      }
+
+      if (zPosition < -25 && Math.random() > 0.25) {
+        spawnHumanObstacle(zPosition);
+      }
+    }
+
+    function spawnHumanObstacle(zPosition) {
+      const humanGroup = new THREE.Group();
+      const laneIndex = Math.floor(Math.random() * 3);
+      const posX = lanes[laneIndex];
+
+      const currentName = nameList[nameIndex % nameList.length];
+      nameIndex++;
+      humanGroup.blockName = currentName;
+
+      const skinMat = new THREE.MeshStandardMaterial({ color: 0xe0ac69, roughness: 0.5 });
+      const shirtMat = new THREE.MeshStandardMaterial({ color: 0x1e3799, roughness: 0.6 });
+      const pantsMat = new THREE.MeshStandardMaterial({ color: 0x2f3640, roughness: 0.7 });
+
+      const torso = new THREE.Mesh(new THREE.BoxGeometry(0.8, 1.0, 0.45), shirtMat);
+      torso.position.y = 1.35;
+      humanGroup.add(torso);
+
+      const head = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.5, 0.45), skinMat);
+      head.position.y = 2.15;
+      humanGroup.add(head);
+
+      const hairMat = new THREE.MeshStandardMaterial({ color: 0x111111 });
+      const hair = new THREE.Mesh(new THREE.BoxGeometry(0.52, 0.16, 0.47), hairMat);
+      hair.position.y = 2.42;
+      humanGroup.add(hair);
+
+      for (let hx of [-0.55, 0.55]) {
+        const hand = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.9, 0.2), shirtMat);
+        hand.position.set(hx, 1.35, 0);
+        humanGroup.add(hand);
+      }
+
+      for (let lx of [-0.22, 0.22]) {
+        const leg = new THREE.Mesh(new THREE.BoxGeometry(0.26, 0.85, 0.3), pantsMat);
+        leg.position.set(lx, 0.42, 0);
+        humanGroup.add(leg);
+      }
+
+      const badgeTex = createForeheadBadgeTexture(currentName);
+      const badgeMat = new THREE.MeshBasicMaterial({ map: badgeTex, transparent: true });
+      const badge = new THREE.Mesh(new THREE.PlaneGeometry(2.0, 0.55), badgeMat);
+      badge.position.set(0, 2.75, 0.1);
+      humanGroup.add(badge);
+
+      const colliderGeo = new THREE.BoxGeometry(1.6, 2.6, 0.8);
+      const colliderMat = new THREE.MeshBasicMaterial({ visible: false });
+      const collider = new THREE.Mesh(colliderGeo, colliderMat);
+      collider.position.y = 1.3;
+      humanGroup.add(collider);
+      humanGroup.collider = collider;
+
+      humanGroup.position.set(posX, 0, zPosition);
+      scene.add(humanGroup);
+      obstacles.push(humanGroup);
+    }
+
+    function moveLeft() {
+      if (currentLane > 0) {
+        currentLane--;
+        targetX = lanes[currentLane];
+      }
+    }
+
+    function moveRight() {
+      if (currentLane < 2) {
+        currentLane++;
+        targetX = lanes[currentLane];
+      }
+    }
+
+    function jump() {
+      if (!isJumping) {
+        isJumping = true;
+        jumpVelocity = 0.36;
+      }
+    }
+
+    function handleKeyDown(e) {
+      if (!isGameRunning || isGameOver) return;
+      if (e.key === 'ArrowLeft' || e.key === 'a') moveLeft();
+      if (e.key === 'ArrowRight' || e.key === 'd') moveRight();
+      if (e.key === 'ArrowUp' || e.key === ' ' || e.key === 'w') jump();
+    }
+
+    function showSpeedAlert(level) {
+      const alertBox = document.getElementById('speed-alert');
+      alertBox.innerText = '⚡ SPEED BOOST! LVL ' + level + ' ⚡';
+      alertBox.style.display = 'block';
+      setTimeout(() => {
+        alertBox.style.display = 'none';
+      }, 1000);
+    }
+
+    function resetToInitialState() {
+      isGameRunning = false;
+      isGameOver = false;
+      score = 0;
+      lastSpeedTier = 0;
+      gameSpeed = initialSpeed;
+      currentLane = 1;
+      targetX = lanes[1];
+      player.position.set(0, 0, 0);
+      isJumping = false;
+      nameIndex = 0;
+
+      if (playerLimbs.armL) {
+        playerLimbs.armL.rotation.x = 0;
+        playerLimbs.armR.rotation.x = 0;
+        playerLimbs.legL.rotation.x = 0;
+        playerLimbs.legR.rotation.x = 0;
+      }
+
+      obstacles.forEach(o => scene.remove(o));
+      obstacles = [];
+
+      sideElements.forEach(s => scene.remove(s));
+      sideElements = [];
+      glowingBands = [];
+
+      tracks.forEach(t => scene.remove(t));
+      tracks = [];
+
+      for (let i = 0; i < totalSegments; i++) {
+        createTrackSegment(-i * trackSegmentLength);
+      }
+
+      document.getElementById('game-over-screen').style.display = 'none';
+      document.getElementById('score-val').innerText = '0';
+      document.getElementById('speed-alert').style.display = 'none';
+
+      // Login screen dikhana agar logged in na ho ya reset pe dobara login maangna ho
+      document.getElementById('login-screen').style.display = 'block';
+    }
+
+    function checkCollision(objA, colliderMesh) {
+      const boxA = new THREE.Box3().setFromObject(objA);
+      const boxB = new THREE.Box3().setFromObject(colliderMesh);
+      return boxA.intersectsBox(boxB);
+    }
+
+    function animate() {
+      requestAnimationFrame(animate);
+
+      const time = Date.now() * 0.003;
+
+      for (let i = 0; i < glowingBands.length; i++) {
+        const item = glowingBands[i];
+        const hue1 = (time * 0.5 + item.offset * 0.1) % 1;
+        const hue2 = (hue1 + 0.33) % 1;
+        const hue3 = (hue1 + 0.66) % 1;
+
+        item.band1.color.setHSL(hue1, 1.0, 0.6);
+        item.band2.color.setHSL(hue2, 1.0, 0.6);
+        item.band3.color.setHSL(hue3, 1.0, 0.6);
+        item.beacon.color.setHSL((hue1 + 0.5) % 1, 1.0, 0.7);
+      }
+
+      if (!isGameRunning || isGameOver) {
+        player.position.x = targetX;
+        renderer.render(scene, camera);
+        return;
+      }
+
+      player.position.x += (targetX - player.position.x) * 0.22;
+      
+      const runCycle = Date.now() * (0.015 * (gameSpeed / initialSpeed));
+      if (!isJumping) {
+        playerLimbs.armL.rotation.x = Math.sin(runCycle) * 0.75;
+        playerLimbs.armR.rotation.x = -Math.sin(runCycle) * 0.75;
+        playerLimbs.legL.rotation.x = -Math.sin(runCycle) * 0.85;
+        playerLimbs.legR.rotation.x = Math.sin(runCycle) * 0.85;
+        player.position.y = Math.abs(Math.sin(runCycle * 2)) * 0.12;
+      } else {
+        player.position.y += jumpVelocity;
+        jumpVelocity += gravity;
+        playerLimbs.legL.rotation.x = 0.5;
+        playerLimbs.legR.rotation.x = -0.5;
+        playerLimbs.armL.rotation.x = -1.2;
+        playerLimbs.armR.rotation.x = -1.2;
+        if (player.position.y <= 0) {
+          player.position.y = 0;
+          isJumping = false;
+        }
+      }
+
+      tracks.forEach(track => {
+        track.position.z += gameSpeed;
+      });
+
+      for (let i = sideElements.length - 1; i >= 0; i--) {
+        let pylon = sideElements[i];
+        pylon.position.z += gameSpeed;
+        if (pylon.position.z > 20) {
+          scene.remove(pylon);
+          sideElements.splice(i, 1);
+          glowingBands.splice(i, 1);
+        }
+      }
+
+      for (let i = obstacles.length - 1; i >= 0; i--) {
+        let obs = obstacles[i];
+        obs.position.z += gameSpeed;
+
+        if (checkCollision(player, obs.collider || obs)) {
+          isGameOver = true;
+          isGameRunning = false;
+          
+          const hitName = obs.blockName ? obs.blockName.toUpperCase() : "SYSTEM CRASH";
+          document.getElementById('crash-name').innerText = hitName;
+          document.getElementById('final-score').innerText = Math.floor(score);
+          document.getElementById('game-over-screen').style.display = 'block';
+        }
+
+        if (obs.position.z > 15) {
+          scene.remove(obs);
+          obstacles.splice(i, 1);
+        }
+      }
+
+      if (tracks[0].position.z > trackSegmentLength) {
+        let oldTrack = tracks.shift();
+        let furthestZ = tracks[tracks.length - 1].position.z;
+        let newZ = furthestZ - trackSegmentLength;
+        oldTrack.position.z = newZ;
+        tracks.push(oldTrack);
+
+        for (let i = 0; i < 2; i++) {
+          let pylonZ = newZ + (i * 12) - 6;
+          createSidePylon(-6.5 - Math.random() * 2, pylonZ);
+          createSidePylon(6.5 + Math.random() * 2, pylonZ);
+        }
+
+        if (Math.random() > 0.28) {
+          spawnHumanObstacle(newZ);
+        }
+      }
+
+      score += gameSpeed * 0.45;
+      document.getElementById('score-val').innerText = Math.floor(score);
+
+      const currentTier = Math.floor(score / 500);
+      if (currentTier > lastSpeedTier) {
+        lastSpeedTier = currentTier;
+        gameSpeed += 0.12;
+        showSpeedAlert(currentTier + 1);
+      }
+
+      renderer.render(scene, camera);
+    }
+
+    function onWindowResize() {
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+    }
+  </script>
+</body>
+</html>
